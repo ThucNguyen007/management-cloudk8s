@@ -1,6 +1,10 @@
 #Base Image node
 FROM node:lts-alpine3.16
 
+# Install Google Chrome Image
+# RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add - && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
+# RUN apt-get update && apt-get -y install google-chrome-stable
+
 WORKDIR /app
 
 RUN npm install -g pm2
