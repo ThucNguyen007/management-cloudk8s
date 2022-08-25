@@ -1,0 +1,10 @@
+# do not use "latest" here, 
+# if you want this to work in the future
+image: docker/compose:alpine-1.29.2
+
+services:
+  # docker on docker linked
+  - docker:20.10.17-dind
+
+stages:
+  - build
