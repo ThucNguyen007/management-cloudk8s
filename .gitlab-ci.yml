@@ -6,3 +6,23 @@ services:
   # docker on docker linked
   - docker:20.10.17-dind
 
+stages:
+  - build
+
+before_script:
+  - docker version
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+# this job is to build Docker image and push to registry
+build:
+  stage: build
+  only:
+    changes:
+      - Dockerfile
+      - src/*
+      - test/*
+      - package.json
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA

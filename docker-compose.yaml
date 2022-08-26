@@ -2,8 +2,9 @@ version: "3.9"
 
 services:
   app:
-    image: thucnguyen95/cloudk8s:newest-production
+    # image: thucnguyen95/cloudk8s:newest-production
     # image: appnode-management:latest-production
+    image: nodejs-cloud:newest-push
     volumes:
       - ./public/images:/app/public/images
     env_file: .env
