@@ -3,9 +3,15 @@ sudo: required
 services:
   - docker
 language: node_js
-  node_js: "14"
+  node_js:
+    - 14
+    - node
 language: python
-  python: "3.8"
+  python:
+    - 3.8
+cache:
+  directories:
+    - "node_modules"
   
 # Get Google Chrome headless browser for Angular tests
 # Install latest Docker CE so we can use Dockerfile outside build context
