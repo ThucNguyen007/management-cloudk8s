@@ -1,23 +1,34 @@
 version: "3.9"
 
 services:
-  app:
-    # image: thucnguyen95/cloudk8s:newest-production
+  product-api-gateway:
+    container_name: product-api-gateway
+    build:
+      context: product-api-gateway
+      dockerfile: ../Dockerfile.nodejs.dev
+    image: product-api-gateway:development
     # image: appnode-management:latest-production
-    image: nodejs-cloud:newest-push
+    # image: registry.gitlab.com/firstgroup232/nodejs-cloud:latest
+    mem_limit: 128m
     volumes:
       - ./public/images:/app/public/images
+    command: sh /app/start.sh
     env_file: .env
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - PORT=${PORT}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - SEARCH_SERVICE_URL=${SEARCH_SERVICE_URL}
     ports:
       - "${PORT}:${PORT}"
     restart: unless-stopped
     depends_on:
         - redis
+        - product-search-service
+        - product-search-ingestion
+        - product-rabbitmq
     networks:
       - cache-network
     healthcheck:
@@ -28,11 +39,13 @@ services:
 
   redis:
     image: redis:6.2.7-alpine
+    mem_limit: 256m
     volumes:
       - .docker1/data/redis:/data
     command: redis-server --requirepass ${REDIS_PASSWORD}
     restart: unless-stopped
-    user: "1009:1012"
+    ports:
+      - 3001:3000
     networks:
       - cache-network
     healthcheck:
@@ -41,6 +54,64 @@ services:
       timeout: 10s
       retries: 5
 
+  product-rabbitmq:
+    container_name: product-rabbitmq
+    image: rabbitmq:3.10.1-management
+    mem_limit: 200m
+    ports:
+      - 5672:5672
+      - 8081:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+
+  product-elastic:
+    container_name: product-elastic
+    image: elasticsearch:7.16.2
+    mem_limit: 512m
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+
+  product-search-ingestion:
+    container_name: product-search-ingestion
+    build:
+      context: product-search-ingestion
+      dockerfile: ../Dockerfile.nodejs.dev
+    image: product-search-ingestion:development
+    mem_limit: 128m
+    command: sh /app/start.sh
+    environment:
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+    depends_on:
+      - product-elastic
+      - product-rabbitmq
+
+  product-search-service:
+    container_name: product-search-service
+    build:
+      context: product-search-service
+      dockerfile: ../Dockerfile.nodejs.dev
+    image: product-search-service:development
+    mem_limit: 128m
+    command: sh /app/start.sh
+    ports:
+      - 3002:3000
+    environment:
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}
+    depends_on:
+      - product-elastic
+
 networks:
   cache-network:
     driver: bridge
+
+volumes:
+  elastic-data:

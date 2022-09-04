@@ -1,10 +1,3 @@
-/*
- * @Author: Mai Trung Duc
- * @Last Modified by: Mai Trung Duc
- * @Last Modified time: 2019-12-22 16:54:06
- * @Copyright © 2019 Mai Trung Duc. All rights reserved
- */
-
 module.exports = {
   apps: [{
     name: 'my_app',
